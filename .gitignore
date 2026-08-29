@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Model weights
+*.pt
+*.onnx
+*.pth
+
+# Generated outputs
+data/outputs/
+*.mp4
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
