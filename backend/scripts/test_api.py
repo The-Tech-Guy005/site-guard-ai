@@ -59,6 +59,22 @@ def main():
     print(json.dumps(res_stats.json(), indent=4))
     assert res_stats.status_code == 200
     
+    # 5.5. Test Dashboard Endpoint
+    print("\n[*] Testing Dashboard endpoint (GET /api/v1/dashboard)...")
+    res_dashboard = client.get("/api/v1/dashboard")
+    print(f"  - Status Code: {res_dashboard.status_code}")
+    print("  - Dashboard Data Summary:")
+    print(json.dumps(res_dashboard.json(), indent=4))
+    assert res_dashboard.status_code == 200
+    
+    # 5.6. Test Current Detections Endpoint
+    print("\n[*] Testing Current Detections endpoint (GET /api/v1/current-detections)...")
+    res_detections = client.get("/api/v1/current-detections")
+    print(f"  - Status Code: {res_detections.status_code}")
+    print("  - Current Detections Data Summary:")
+    print(json.dumps(res_detections.json(), indent=4))
+    assert res_detections.status_code == 200
+    
     # 6. Test Recording Upload Endpoint (Validation check only)
     print("\n[*] Testing Recording Upload Validation (POST /api/v1/recordings/upload)...")
     mock_file_data = b"dummy video content"
@@ -75,6 +91,7 @@ def main():
     
     print("=" * 60)
     print("SiteGuard AI - REST API Integration Test: SUCCESS")
+    print("Including new Dashboard endpoint")
     print("=" * 60)
 
 if __name__ == "__main__":

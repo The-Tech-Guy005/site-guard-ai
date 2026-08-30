@@ -36,53 +36,74 @@ class SafetyRiskEngine:
         has_vest = ppe_status.get("safety_vest", False)
         has_shoes = ppe_status.get("safety_shoes", False)
         
+        # Check if PPE detection is available (all False means detector might not be loaded)
+        ppe_detection_available = any([has_helmet, has_vest, has_shoes])
+        
         violations = []
         zone_type = zone.zone_type if zone else "NONE"
         
-        # 1. Base risk assessment based on spatial severity level
-        if zone_type == "SAFE": # REST_ZONE
-            base_risk = 10
-            # Warning only, not strict violation
-            if not has_helmet:
-                violations.append("No Helmet in Rest Zone (Warning)")
-            if not has_vest:
-                violations.append("No Vest in Rest Zone (Warning)")
-                
-        elif zone_type == "CAUTION": # WORK_ZONE
-            base_risk = 30
-            # Helmet and Vest required
-            if not has_helmet:
-                violations.append("Missing Helmet in WORK_ZONE")
-            if not has_vest:
-                violations.append("Missing Safety Vest in WORK_ZONE")
-                
-        elif zone_type == "HIGH_RISK": # VEHICLE_ZONE
-            base_risk = 60
-            # Helmet, Vest, and Safety Shoes required
-            if not has_helmet:
-                violations.append("Missing Helmet in VEHICLE_ZONE")
-            if not has_vest:
-                violations.append("Missing Safety Vest in VEHICLE_ZONE")
-            if not has_shoes:
-                violations.append("Missing Safety Shoes in VEHICLE_ZONE")
-                
-        elif zone_type == "CRITICAL": # CRITICAL_ZONE
-            base_risk = 80
-            # All PPE strictly required
-            if not has_helmet:
-                violations.append("CRITICAL: No Helmet in Crane Area")
-            if not has_vest:
-                violations.append("CRITICAL: No Vest in Crane Area")
-            if not has_shoes:
-                violations.append("CRITICAL: No Safety Shoes in Crane Area")
-                
-        else: # Outside configured zones
-            base_risk = 20
-            # Helmet and Vest required by default on site
-            if not has_helmet:
-                violations.append("Missing Helmet")
-            if not has_vest:
-                violations.append("Missing Safety Vest")
+        # If PPE detection is not available, use zone-based risk only
+        if not ppe_detection_available:
+            if zone_type == "SAFE":
+                base_risk = 10
+                violations.append("PPE detection not available")
+            elif zone_type == "CAUTION":
+                base_risk = 30
+                violations.append("PPE detection not available in work zone")
+            elif zone_type == "HIGH_RISK":
+                base_risk = 60
+                violations.append("PPE detection not available in high-risk zone")
+            elif zone_type == "CRITICAL":
+                base_risk = 80
+                violations.append("PPE detection not available in critical zone")
+            else:
+                base_risk = 20
+                violations.append("PPE detection not available")
+        else:
+            # 1. Base risk assessment based on spatial severity level
+            if zone_type == "SAFE": # REST_ZONE
+                base_risk = 10
+                # Warning only, not strict violation
+                if not has_helmet:
+                    violations.append("No Helmet in Rest Zone (Warning)")
+                if not has_vest:
+                    violations.append("No Vest in Rest Zone (Warning)")
+                    
+            elif zone_type == "CAUTION": # WORK_ZONE
+                base_risk = 30
+                # Helmet and Vest required
+                if not has_helmet:
+                    violations.append("Missing Helmet in WORK_ZONE")
+                if not has_vest:
+                    violations.append("Missing Safety Vest in WORK_ZONE")
+                    
+            elif zone_type == "HIGH_RISK": # VEHICLE_ZONE
+                base_risk = 60
+                # Helmet, Vest, and Safety Shoes required
+                if not has_helmet:
+                    violations.append("Missing Helmet in VEHICLE_ZONE")
+                if not has_vest:
+                    violations.append("Missing Safety Vest in VEHICLE_ZONE")
+                if not has_shoes:
+                    violations.append("Missing Safety Shoes in VEHICLE_ZONE")
+                    
+            elif zone_type == "CRITICAL": # CRITICAL_ZONE
+                base_risk = 80
+                # All PPE strictly required
+                if not has_helmet:
+                    violations.append("CRITICAL: No Helmet in Crane Area")
+                if not has_vest:
+                    violations.append("CRITICAL: No Vest in Crane Area")
+                if not has_shoes:
+                    violations.append("CRITICAL: No Safety Shoes in Crane Area")
+                    
+            else: # Outside configured zones
+                base_risk = 20
+                # Helmet and Vest required by default on site
+                if not has_helmet:
+                    violations.append("Missing Helmet")
+                if not has_vest:
+                    violations.append("Missing Safety Vest")
 
         # 2. Compute risk penalty based on active violations
         penalty = len(violations) * 20

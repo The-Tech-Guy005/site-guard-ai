@@ -55,6 +55,7 @@ PROCESS_STATUS = {
 }
 
 LATEST_FRAME = None
+CURRENT_DETECTIONS = []  # Store current frame detections for API
 
 def draw_worker_safety_label_pil(img: np.ndarray, text: str, x: int, y: int, bg_color: tuple) -> np.ndarray:
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -180,7 +181,14 @@ def process_video(
             
         zone_engine = SafetyZoneEngine(scaled_zones)
         tracker = ByteTracker()
-        ppe_detector = PPEDetector(confidence_threshold=ppe_conf)
+        
+        # Try to initialize PPE detector, fallback to None if model not available
+        try:
+            ppe_detector = PPEDetector(confidence_threshold=ppe_conf)
+        except FileNotFoundError:
+            print("PPE model not found, proceeding without PPE detection")
+            ppe_detector = None
+            
         risk_engine = SafetyRiskEngine()
         alert_engine = SafetyAlertEngine(fps=fps, cooldown_seconds=5.0)
         
@@ -227,6 +235,10 @@ def process_video(
                 classes=[0]
             )
             
+            # Store current detections for API access
+            global CURRENT_DETECTIONS
+            CURRENT_DETECTIONS = tracks
+            
             frame_violations_count = 0
             frame_max_risk = 0
             zone_occupancy = {}
@@ -254,7 +266,11 @@ def process_video(
                 c_ymax = min(height, ymax + pad)
                 
                 worker_crop = frame[c_ymin:c_ymax, c_xmin:c_xmax]
-                local_detections = ppe_detector.detect_crop(worker_crop)
+                
+                if ppe_detector:
+                    local_detections = ppe_detector.detect_crop(worker_crop)
+                else:
+                    local_detections = []
                 
                 has_helmet = False
                 has_vest = False
